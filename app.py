@@ -186,7 +186,7 @@ def static(path = ''):
    return bottle.static_file(path, root=os.path.split(__file__)[0]+'/html')
 
 def main():
-    bottle.run(host = "0.0.0.0", port=8080, server="gevent", debug=True)
+    bottle.run(host = "0.0.0.0", port=9090, server="gevent", debug=True)
 
 if __name__ == '__main__':
     main()

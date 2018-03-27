@@ -6,13 +6,35 @@
    controller('message_ctrl', [
               '$scope', '$http', '$timeout',
       function($scope,   $http,   $timeout) {
+         // sending
+         $scope.database = 'testing';
+         $scope.level = 'INFO';
+         $scope.message = 'Type a message here and hit send...';
+
+         // receiving
          $scope.messages = [];
-         $scope.url = "./db/testing/messages/new3";
+         $scope.url = "/messages/new3";
          $scope.message_limit = 1000;
+
+         $scope.send_message = function() {
+            $http({
+                url: "./db/"+$scope.database+'/messages',
+                method: "POST",
+                data: {
+                       "message" : $scope.message,
+                       "level"   : $scope.level
+                      }
+            }).then(function successCallback(response) {
+                  // great, so what...
+               }, function errorCallback(response) {
+                  // that's bad, but not going to do anything about it
+                  console.log('error', response.statusText);
+            });
+         };
 
          $scope.poll_for_new_messages = function() {
             $http({
-                url: $scope.url,
+                url: "./db/"+$scope.database+$scope.url,
                 method: "GET"
                 // TODO: set header to disallow cache since long polling
                 // TODO: send id of last message received to get all since
@@ -43,6 +65,9 @@
             });
          };
 
+         // on load, first time, start polling:
+         $timeout($scope.poll_for_new_messages(), 0); // poll for the first time
+
       }]);
    </script>
 </head>
@@ -53,20 +78,25 @@
       <form id="form">
          <table>
             <tr>
-               <td><label for="name">Name:</label></td>
-               <td><input id="name" size="10" /></td>
+               <td><label for="database">Database:</label></td>
+               <td><input id="database" size="30" ng-model="database"/></td>
+
+               <td rowspan="3" align="center">
+                  <button id="send" ng-click="send_message()">Send</button>
+               </td>
             </tr>
             <tr>
-               <td><label for="message">message:</label></td>
-               <td><input id="message" size="40" /></td>
+               <td><label for="level">Level:</label></td>
+               <td><input id="level" size="15" ng-model="level"/></td>
             </tr>
             <tr>
-               <td colspan="2" align="center"><button id="send">Send</button></td>
+               <td><label for="message">Message:</label></td>
+               <td><input id="message" size="60" ng-model="message"/></td>
             </tr>
          </table>
       </form>
 
-      <input ng-model="url" size="100"></input>
+      <input ng-model="url" size="30"></input>
       <button ng-click="poll_for_new_messages()">Poll Now</button>
       <button ng-click="stop()">Stop</button>
       <span>{{error}}</span>
