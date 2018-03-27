@@ -1,0 +1,80 @@
+<html ng-app="message_app">
+<head>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+   <script>
+   angular.module('message_app',[]).
+   controller('message_ctrl', [
+              '$scope', '$http', '$timeout',
+      function($scope,   $http,   $timeout) {
+         $scope.messages = [];
+         $scope.url = "./db/testing/messages/new3";
+         $scope.message_limit = 1000;
+
+         $scope.poll_for_new_messages = function() {
+            $http({
+                url: $scope.url,
+                method: "GET"
+                // TODO: set header to disallow cache since long polling
+                // TODO: send id of last message received to get all since
+                // ,data: {"foo":"bar"}
+            }).then(function successCallback(response) {
+                  // for each message in the data, if it's not in the messages we already have
+                  // then append to messages
+                  // limit our messages to _message_limit
+                  for (var i = 0; i < response.data.length; i++) {
+                     var d = response.data[i];
+                     var found = false;
+                     for (var j = 0; j < $scope.messages.length; j++) {
+                        var m = $scope.messages[j];
+                        if (m['timestamp'] == d['timestamp']) {
+                           found = true;
+                           break
+                        }
+                     }
+                     if (!found) {
+                        $scope.messages.push(d); // new message!
+                     }
+                  }
+
+                  $timeout($scope.poll_for_new_messages(), 0); // poll again
+               }, function errorCallback(response) {
+                  console.log('error', response.statusText);
+                  $timeout($scope.poll_for_new_messages(), 10000); // poll again in 10 seconds
+            });
+         };
+
+      }]);
+   </script>
+</head>
+
+<body>
+   <div ng-controller="message_ctrl">
+
+      <form id="form">
+         <table>
+            <tr>
+               <td><label for="name">Name:</label></td>
+               <td><input id="name" size="10" /></td>
+            </tr>
+            <tr>
+               <td><label for="message">message:</label></td>
+               <td><input id="message" size="40" /></td>
+            </tr>
+            <tr>
+               <td colspan="2" align="center"><button id="send">Send</button></td>
+            </tr>
+         </table>
+      </form>
+
+      <input ng-model="url" size="100"></input>
+      <button ng-click="poll_for_new_messages()">Poll Now</button>
+      <button ng-click="stop()">Stop</button>
+      <span>{{error}}</span>
+      <pre>{{data|json}}</pre>
+      <ul ng-repeat="message in messages">
+         <li>{{message}}</li>
+      </ul>
+
+   </div>
+   </body>
+</html>
