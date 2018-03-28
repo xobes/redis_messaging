@@ -13,7 +13,7 @@
 
          // receiving
          $scope.messages = [];
-         $scope.url = "/messages/new3";
+         $scope.url = "/messages/new";
          $scope.message_limit = 1000;
 
          $scope.send_message = function() {
@@ -58,18 +58,29 @@
                      }
                   }
 
-                  $timeout($scope.poll_for_new_messages(), 0); // poll again
+                  $timeout($scope.poll_for_new_messages, 0); // poll again
                }, function errorCallback(response) {
                   console.log('error', response.statusText);
-                  $timeout($scope.poll_for_new_messages(), 10000); // poll again in 10 seconds
+                  $timeout($scope.poll_for_new_messages, 10000); // poll again in 10 seconds
             });
          };
 
          // on load, first time, start polling:
-         $timeout($scope.poll_for_new_messages(), 0); // poll for the first time
+         $timeout($scope.poll_for_new_messages, 0); // poll for the first time
 
       }]);
    </script>
+   <style>
+      .INFO {background-color: #3498DB;}
+      .DEBUG {background-color: #A569BD;}
+      .WARN {background-color: #FFC300;}
+      .ERROR {background-color: #FF5733;}
+      .CRITICAL {background-color: #C70039; color: #ffffff;}
+
+      td.message_data {
+         border-radius: 3px;
+      }
+   </style>
 </head>
 
 <body>
@@ -101,9 +112,15 @@
       <button ng-click="stop()">Stop</button>
       <span>{{error}}</span>
       <pre>{{data|json}}</pre>
-      <ul ng-repeat="message in messages">
-         <li>{{message}}</li>
-      </ul>
+      <table>
+         <tr ng-repeat="message in messages">
+            <td class="{{message.level}} message_data timestamp">{{message.timestamp}}</td>
+            <td class="{{message.level}} message_data level">{{message.level}}</td>
+            <td class="{{message.level}} message_data hostname">{{message.hostname}}</td>
+            <td class="{{message.level}} message_data message">{{message.message}}</td>
+            <td class="{{message.level}} message_data username">{{message.username}}</td>
+         </tr>
+      </table>
 
    </div>
    </body>

@@ -66,39 +66,6 @@ def post_messages_api(database=None):
 
 @bottle.get('/db/<database:re:[a-zA-Z_0-9]+>/messages/new')
 @bottle.get('/messages/new')
-def new_messages(database = None):
-   if database is None:
-      if bottle.request.query.database:
-         database = bottle.request.query.database
-   assert database is not None
-   prefix = 'messages:'
-   pub_key = "{prefix}{database}:keychanges".format(prefix = prefix,database=database)
-   ps = redis_instance.pubsub(ignore_subscribe_messages = True)
-   ps.subscribe(pub_key)
-
-   bottle.response.content_type = 'application/json'
-   yield '['
-   comma = ''
-   n = 0
-   c = 0
-   while n < 10:
-      x = ps.get_message() # non-blocking
-      if x:
-         c = 1
-         k = x['data']
-         ks = k.split(':')
-         d = {'hostname': ks[-2]}
-         d.update(redis_instance.hgetall(k))
-         yield comma + json.dumps(d) # format....
-         comma = ','
-      else:
-         n += c
-         time.sleep(0.01)
-   # yield comma + '{{n:{},c:{},x:{}}}'.format(n, c, x)
-   yield ']' # close the array
-
-@bottle.get('/db/<database:re:[a-zA-Z_0-9]+>/messages/new3')
-@bottle.get('/messages/new3')
 def new_messages3(database = None, timeout = 10.0):
    '''
    wait up to 10 seconds for a new message, if there is more than one immediately available
@@ -138,45 +105,9 @@ def new_messages3(database = None, timeout = 10.0):
          comma = ','
       else:
          if comma: break # there was a message, but not more than one immediately available
+   ps.unsubscribe()
+   ps.reset()
    yield ']' # close the array
-
-@bottle.get('/db/<database:re:[a-zA-Z_0-9]+>/messages/new2')
-@bottle.get('/messages/new2')
-def new_messages2(database=None):
-   '''
-   this works, but the long-polling approach starts/stops connections to the redis server pub/sub
-   over and over -- and we're bound to lose something in the process...
-
-   if a client doesn't start polling again fast enough it'll miss messages...
-
-   :param database:
-   :return:
-   '''
-   if database is None:
-      if bottle.request.query.database:
-         database = bottle.request.query.database
-   assert database is not None
-   prefix = 'messages:'
-   pub_key = "{prefix}{database}:keychanges".format(prefix=prefix, database=database)
-   ps = redis_instance.pubsub(ignore_subscribe_messages = True)
-   ps.subscribe(pub_key)
-
-   bottle.response.content_type = 'application/json'
-
-   fd = ps.connection._sock.fileno();
-   while 1: # blocking
-      rlist,_,_ = select.select([fd], [], [], 0)  # or replace 0 with None to block
-      if rlist:
-         for rfd in rlist:
-            if fd == rfd:
-               x = ps.get_message()
-               if x:
-                  k = x['data']
-                  ks = k.split(':')
-                  d = {'hostname': ks[-2]}
-                  d.update(redis_instance.hgetall(k))
-                  return json.dumps(d) # format....
-      time.sleep(0.01) # ... be nice
 
 
 @bottle.route('/')
