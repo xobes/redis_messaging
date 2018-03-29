@@ -66,7 +66,7 @@ def post_messages_api(database=None):
 
 @bottle.get('/db/<database:re:[a-zA-Z_0-9]+>/messages/new')
 @bottle.get('/messages/new')
-def new_messages3(database = None, timeout = 10.0):
+def new_messages(database = None, timeout = 10.0):
    '''
    wait up to 10 seconds for a new message, if there is more than one immediately available
    they ought to all be returned, however there may be messages missed if the client

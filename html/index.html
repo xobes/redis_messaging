@@ -6,9 +6,22 @@
    controller('message_ctrl', [
               '$scope', '$http', '$timeout',
       function($scope,   $http,   $timeout) {
+         $scope.levels = {
+            'CRITICAL':50,
+            'ERROR':40,
+            'WARNING':30,
+            'INFO':20,
+            'DEBUG':10
+         };
+         $scope.levels_from_number = {}
+         for (var k in $scope.levels) {
+            $scope.levels_from_number[$scope.levels[k]] = k;
+         }
+
          // sending
          $scope.database = 'testing';
-         $scope.level = 'INFO';
+         $scope.level = $scope.levels['INFO'];
+
          $scope.message = 'Type a message here and hit send...';
 
          // receiving
@@ -22,7 +35,7 @@
                 method: "POST",
                 data: {
                        "message" : $scope.message,
-                       "level"   : $scope.level
+                       "level"   : $scope.levels_from_number[$scope.level]
                       }
             }).then(function successCallback(response) {
                   // great, so what...
@@ -65,6 +78,13 @@
             });
          };
 
+         $scope.filter_level = $scope.levels['INFO'];
+         $scope.filterMatch = function(filter_level) {
+            return function(item) {
+               return ($scope.levels[item.level] >= filter_level)
+            }
+         }
+
          // on load, first time, start polling:
          $timeout($scope.poll_for_new_messages, 0); // poll for the first time
 
@@ -73,8 +93,8 @@
    <style>
       .INFO {background-color: #3498DB;}
       .DEBUG {background-color: #A569BD;}
-      .WARN {background-color: #FFC300;}
-      .ERROR {background-color: #FF5733;}
+      .WARNING {background-color: #FFC300;}
+      .ERROR {background-color: #FF5733; color: #ffffff;}
       .CRITICAL {background-color: #C70039; color: #ffffff;}
 
       td.message_data {
@@ -98,7 +118,10 @@
             </tr>
             <tr>
                <td><label for="level">Level:</label></td>
-               <td><input id="level" size="15" ng-model="level"/></td>
+               <td>
+                  <select ng-model="level" ng-options="x for (x,y) in levels"></select>
+                  <!--<input id="level" size="15" ng-model="level"/>-->
+               </td>
             </tr>
             <tr>
                <td><label for="message">Message:</label></td>
@@ -107,13 +130,29 @@
          </table>
       </form>
 
-      <input ng-model="url" size="30"></input>
-      <button ng-click="poll_for_new_messages()">Poll Now</button>
-      <button ng-click="stop()">Stop</button>
-      <span>{{error}}</span>
-      <pre>{{data|json}}</pre>
+      <hr>
+
+      <!--<input ng-model="url" size="30"></input>-->
+      <!--<button ng-click="poll_for_new_messages()">Poll Now</button>-->
+      <!--<button ng-click="stop()">Stop</button>-->
+
+      <div id="filters">
+         <b>Filters:</b><br/>
+         <label for="filter_level">Level:</label>
+         <select id="filter_level" ng-model="filter_level" ng-options="x for (x,y) in levels">
+         </select>
+         <label for="filter_hostname">Hostname:</label>
+         <input id="filter_hostname" ng-model="filter_hostname">
+         <label for="filter_any">Any:</label>
+         <input id="filter_any" ng-model="filter_any">
+      </div>
+
       <table>
-         <tr ng-repeat="message in messages">
+         <tr ng-repeat="message in messages
+                        | filter : filterMatch(filter_level)
+                        | filter : {hostname:filter_hostname}
+                        | filter : {$:filter_any}
+                        | orderBy:'timestamp':'reverse'">
             <td class="{{message.level}} message_data timestamp">{{message.timestamp}}</td>
             <td class="{{message.level}} message_data level">{{message.level}}</td>
             <td class="{{message.level}} message_data hostname">{{message.hostname}}</td>

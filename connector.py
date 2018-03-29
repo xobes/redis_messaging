@@ -5,7 +5,7 @@ r = redis.StrictRedis(host='192.168.1.2', port=6379, db=0)
 
 _DEFAULT_MAX_MESSAGES = 200
 _DEFAULT_TTL_SECONDS = 30 * 24 * 60 * 60 # days * h/d * m/h * s/m => days in seconds
-message_levels = ('DEBUG','INFO','WARN','ERROR','CRITICAL')
+message_levels = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
 
 def post_message(database,
                  hostname,
