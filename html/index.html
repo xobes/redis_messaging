@@ -19,10 +19,12 @@
          }
 
          // sending
+         $scope.max_messages = 1000;   // abs max
+         $scope.count_messages = 1000; // user controlled
+
          $scope.database = 'testing';
          $scope.level = $scope.levels['INFO'];
-
-         $scope.message = 'Type a message here and hit send...';
+         $scope.message = 'TODO: make the message request return all messages not already returned...';
 
          // receiving
          $scope.messages = [];
@@ -69,6 +71,9 @@
                      if (!found) {
                         $scope.messages.push(d); // new message!
                      }
+                     // limit to max messages
+                     $scope.messages.splice(0, ($scope.messages.length -
+                        Math.min($scope.count_messages, $scope.max_messages)));
                   }
 
                   $timeout($scope.poll_for_new_messages, 0); // poll again
@@ -91,14 +96,33 @@
       }]);
    </script>
    <style>
-      .INFO {background-color: #3498DB;}
-      .DEBUG {background-color: #A569BD;}
+      .INFO {background-color: #3498DB; color: #ffffff;}
+      .DEBUG {background-color: #A569BD; color: #ffffff;}
       .WARNING {background-color: #FFC300;}
       .ERROR {background-color: #FF5733; color: #ffffff;}
       .CRITICAL {background-color: #C70039; color: #ffffff;}
 
-      td.message_data {
+      td.timestamp,
+      .hostname,
+      .username {
+         background-color: #D6DBDF;
+      }
+      .timestamp {
+         width:190px;
+      }
+      .level {
+         text-align:center;
+      }
+
+      th.message_header,td.message_data {
          border-radius: 3px;
+         font-size: 12px;
+         font-family: 'Lucida Console', Monaco, monospace;
+      }
+      .message_header {
+         font-weight:bold;
+         border: 1px solid #808B96;
+         padding: 7px 5px 2px 5px;
       }
    </style>
 </head>
@@ -119,8 +143,7 @@
             <tr>
                <td><label for="level">Level:</label></td>
                <td>
-                  <select ng-model="level" ng-options="x for (x,y) in levels"></select>
-                  <!--<input id="level" size="15" ng-model="level"/>-->
+                  <select id="level" ng-model="level" ng-options="x for (x,y) in levels"></select>
                </td>
             </tr>
             <tr>
@@ -137,27 +160,52 @@
       <!--<button ng-click="stop()">Stop</button>-->
 
       <div id="filters">
-         <b>Filters:</b><br/>
-         <label for="filter_level">Level:</label>
-         <select id="filter_level" ng-model="filter_level" ng-options="x for (x,y) in levels">
-         </select>
-         <label for="filter_hostname">Hostname:</label>
-         <input id="filter_hostname" ng-model="filter_hostname">
-         <label for="filter_any">Any:</label>
-         <input id="filter_any" ng-model="filter_any">
+         <table>
+            <tr>
+               <td>
+                  <b>Filters:</b>
+               </td>
+               <td>
+                  <label for="filter_level">Level:</label>
+                  <select id="filter_level" ng-model="filter_level" ng-options="x for (x,y) in levels">
+                  </select>
+                  <label for="filter_hostname">Hostname:</label>
+                  <input id="filter_hostname" ng-model="filter_hostname">
+                  <label for="filter_any">Any:</label>
+                  <input id="filter_any" ng-model="filter_any">
+               </td>
+               <td>
+                  <span>Messages: {{messages.length}} / Limit</span>
+                  <input style="width:40px;" ng-model="count_messages">
+               </td>
+            </tr>
+         </table>
       </div>
 
       <table>
+         <tr>
+            <th class="message_header timestamp">timestamp</th>
+            <th class="message_header">hostname</th>
+            <th class="message_header">username</th>
+            <th class="message_header">level</th>
+            <th class="message_header">message</th>
+         </tr>
          <tr ng-repeat="message in messages
                         | filter : filterMatch(filter_level)
                         | filter : {hostname:filter_hostname}
                         | filter : {$:filter_any}
                         | orderBy:'timestamp':'reverse'">
-            <td class="{{message.level}} message_data timestamp">{{message.timestamp}}</td>
+       <!-- TODO: make timestamp smaller, just the time, hover text to show the date
+       and/or toggle button.
+       also hid/show toggle for hostname and username
+       username is like hostname -- there won't be more than one token... (probably)
+       default hidden, definetly show it as hover text....
+       -->
+            <td class="message_data timestamp">{{message.timestamp * 1000 | date:'yyyy-MM-dd HH:mm:ss Z'}}</td>
+            <td class="message_data hostname">{{message.hostname}}</td>
+            <td class="message_data username">{{message.username}}</td>
             <td class="{{message.level}} message_data level">{{message.level}}</td>
-            <td class="{{message.level}} message_data hostname">{{message.hostname}}</td>
-            <td class="{{message.level}} message_data message">{{message.message}}</td>
-            <td class="{{message.level}} message_data username">{{message.username}}</td>
+            <td class="message_data message">{{message.message}}</td>
          </tr>
       </table>
 
